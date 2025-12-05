@@ -1,0 +1,7 @@
+.env
+*.log
+data/
+.idea
+.venv
+.DS_Store
+
