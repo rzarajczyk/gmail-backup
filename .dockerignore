@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+.env.example
+README.md
+*.log
+data/
+.idea
+.venv
+.DS_Store
+

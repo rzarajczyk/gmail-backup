@@ -1,0 +1,29 @@
+[general]
+accounts = Gmail
+maxsyncaccounts = 1
+pythonfile = /etc/offlineimap/offlineimap_helper.py
+
+[Account Gmail]
+localrepository = Local
+remoterepository = Remote
+synclabels = yes
+labelsheader = X-Keywords
+
+[Repository Local]
+type = Maildir
+localfolders = /data/mail/gmail
+sync_deletes = no
+
+[Repository Remote]
+type = Gmail
+remoteuser = ${GMAIL_USER}
+remotepass = ${GMAIL_APP_PASSWORD}
+realdelete = no
+ssl = yes
+sslcacertfile = /etc/ssl/certs/ca-certificates.crt
+maxconnections = 3
+# Folder filtering - exclude some Gmail special folders
+folderfilter = lambda folder: folder not in ['[Gmail]/All Mail', '[Gmail]/Important', '[Gmail]/Starred']
+# Translate Gmail folder names
+nametrans = lambda folder: folder.replace('[Gmail]/', '').replace(' ', '_')
+

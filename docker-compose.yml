@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  gmail-backup:
+    build: .
+    container_name: gmail-backup
+    environment:
+      # Required parameters
+      - GMAIL_USER=${GMAIL_USER}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+      # Optional parameters with defaults
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-300}
+      - RAINLOOP_PORT=${RAINLOOP_PORT:-8080}
+    ports:
+      - "${RAINLOOP_PORT:-8080}:8080"
+      - "143:143"  # Optional: expose IMAP port
+    volumes:
+      - gmail_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  gmail_data:
+    driver: local
+
