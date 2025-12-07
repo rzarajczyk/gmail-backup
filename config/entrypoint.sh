@@ -143,7 +143,7 @@ plugin {
   fts_xapian = partial=3 full=20 verbose=0
   fts_autoindex = yes
   fts_autoindex_max_recent_msgs = 100
-  fts_enforced = no
+  fts_enforced = yes
 }
 
 service imap-login {
@@ -262,6 +262,20 @@ log "Login with: ${GMAIL_USER}"
 log "============================================"
 log "Starting services..."
 
-# Execute the main command
-exec "$@"
+# Execute the main command and start services in background
+exec "$@" &
+
+# Wait for Dovecot to start
+sleep 5
+
+# Build FTS indexes for existing emails if not already built
+if [ -d "/data/mail/gmail" ] && [ ! -d "/data/mail/gmail/xapian-indexes" ]; then
+    log "Building full-text search indexes for existing emails..."
+    doveadm fts rescan -u "${GMAIL_USER}" 2>/dev/null || true
+    doveadm index -u "${GMAIL_USER}" '*' 2>/dev/null || true
+    log "Full-text search indexes built successfully"
+fi
+
+# Wait for background process
+wait
 
