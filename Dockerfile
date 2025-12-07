@@ -6,6 +6,7 @@ LABEL description="Gmail backup with OfflineIMAP, Dovecot and Rainloop"
 # Environment variables with defaults
 ENV GMAIL_USER=""
 ENV GMAIL_APP_PASSWORD=""
+ENV RAINLOOP_PASSWORD=""
 ENV SYNC_INTERVAL=300
 ENV DOVECOT_USER=vmail
 ENV DOVECOT_UID=1000
@@ -46,7 +47,6 @@ RUN curl -sL https://repository.rainloop.net/installer.php -o /var/www/rainloop/
     && chown -R www-data:www-data /var/www/rainloop
 
 # Copy configuration files
-COPY config/offlineimaprc.template /etc/offlineimap/offlineimaprc.template
 COPY config/dovecot.conf /etc/dovecot/dovecot.conf
 COPY config/nginx.conf /etc/nginx/sites-available/default
 COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf

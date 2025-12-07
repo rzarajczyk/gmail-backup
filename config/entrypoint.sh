@@ -30,6 +30,11 @@ if [ -z "$GMAIL_APP_PASSWORD" ]; then
     error "GMAIL_APP_PASSWORD environment variable is required"
 fi
 
+if [ -z "$RAINLOOP_PASSWORD" ]; then
+    warn "RAINLOOP_PASSWORD not set, using GMAIL_APP_PASSWORD for Rainloop login"
+    RAINLOOP_PASSWORD="$GMAIL_APP_PASSWORD"
+fi
+
 log "Starting Gmail Backup Container"
 log "Gmail User: $GMAIL_USER"
 log "Sync Interval: ${SYNC_INTERVAL:-300}s"
@@ -66,6 +71,8 @@ pythonfile = /etc/offlineimap/offlineimap_helper.py
 [Account Gmail]
 localrepository = Local
 remoterepository = Remote
+synclabels = yes
+labelsheader = X-Keywords
 
 [Repository Local]
 type = Maildir
@@ -88,14 +95,15 @@ chmod 600 /data/offlineimap/.offlineimaprc
 
 # Configure Dovecot password
 log "Configuring Dovecot..."
-export DOVECOT_PASSWORD="${GMAIL_APP_PASSWORD}"
+export DOVECOT_PASSWORD="${RAINLOOP_PASSWORD}"
 
 # Create Dovecot passwd file for authentication
 mkdir -p /etc/dovecot/users
 cat > /etc/dovecot/users/passwd << EOF
-${GMAIL_USER}:{PLAIN}${GMAIL_APP_PASSWORD}:${DOVECOT_UID}:${DOVECOT_GID}::/data/mail::
+${GMAIL_USER}:{PLAIN}${RAINLOOP_PASSWORD}:${DOVECOT_UID}:${DOVECOT_GID}::/data/mail::
 EOF
-chmod 600 /etc/dovecot/users/passwd
+chmod 644 /etc/dovecot/users/passwd
+chown dovecot:dovecot /etc/dovecot/users/passwd
 
 # Update dovecot config to use passwd file
 cat > /etc/dovecot/dovecot.conf << 'DOVEOF'
@@ -192,7 +200,29 @@ ln -sf /data/rainloop/data /var/www/rainloop/data
 
 # Configure Rainloop domains for local IMAP
 mkdir -p /data/rainloop/data/_data_/_default_/domains
+
+# Create localhost.ini
 cat > /data/rainloop/data/_data_/_default_/domains/localhost.ini << EOF
+imap_host = "127.0.0.1"
+imap_port = 143
+imap_secure = "None"
+imap_short_login = Off
+sieve_use = Off
+sieve_allow_raw = Off
+sieve_host = ""
+sieve_port = 4190
+sieve_secure = "None"
+smtp_host = ""
+smtp_port = 25
+smtp_secure = "None"
+smtp_short_login = Off
+smtp_auth = On
+smtp_php_mail = Off
+white_list = ""
+EOF
+
+# Create gmail.com.ini pointing to local Dovecot
+cat > /data/rainloop/data/_data_/_default_/domains/gmail.com.ini << EOF
 imap_host = "127.0.0.1"
 imap_port = 143
 imap_secure = "None"

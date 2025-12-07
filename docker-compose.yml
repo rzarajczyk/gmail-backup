@@ -8,6 +8,7 @@ services:
       # Required parameters
       - GMAIL_USER=${GMAIL_USER}
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+      - RAINLOOP_PASSWORD=${RAINLOOP_PASSWORD}
       # Optional parameters with defaults
       - SYNC_INTERVAL=${SYNC_INTERVAL:-300}
       - RAINLOOP_PORT=${RAINLOOP_PORT:-8080}
