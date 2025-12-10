@@ -247,6 +247,7 @@ chown -R vmail:vmail /data/mail
 chown -R www-data:www-data /data/rainloop
 chown -R vmail:vmail /data/offlineimap
 chmod -R 700 /data/mail
+chmod 600 /data/offlineimap/.offlineimaprc
 
 # Start PHP-FPM socket directory
 mkdir -p /run/php

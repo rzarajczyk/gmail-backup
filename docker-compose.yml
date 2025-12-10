@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   gmail-backup:
-    build: .
+    image: rzarajczyk/gmail-backup:latest
     container_name: gmail-backup
     environment:
       # Required parameters
