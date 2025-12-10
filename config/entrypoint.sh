@@ -67,6 +67,7 @@ cat > /data/offlineimap/.offlineimaprc << EOF
 accounts = Gmail
 maxsyncaccounts = 1
 pythonfile = /etc/offlineimap/offlineimap_helper.py
+metadata = /data/offlineimap
 
 [Account Gmail]
 localrepository = Local
