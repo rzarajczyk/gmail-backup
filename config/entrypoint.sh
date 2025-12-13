@@ -284,10 +284,19 @@ DOVEOF
 
 # Set up Rainloop with persistent data
 log "Configuring Rainloop..."
+# Remove any existing symlink first to avoid circular references
+if [ -L "/var/www/rainloop/data" ]; then
+    rm -f /var/www/rainloop/data
+fi
+# Create rainloop data directory if it doesn't exist
 if [ ! -d "/data/rainloop/data" ]; then
+    mkdir -p /data/rainloop
     cp -r /var/www/rainloop/data /data/rainloop/
 fi
-rm -rf /var/www/rainloop/data
+# Remove the original directory if it still exists and create symlink
+if [ -d "/var/www/rainloop/data" ] && [ ! -L "/var/www/rainloop/data" ]; then
+    rm -rf /var/www/rainloop/data
+fi
 ln -sf /data/rainloop/data /var/www/rainloop/data
 
 # Configure Rainloop domains for local IMAP
