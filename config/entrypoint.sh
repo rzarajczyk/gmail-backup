@@ -22,7 +22,7 @@ error() {
 }
 
 # Multi-account configuration
-MAX_ACCOUNTS=1  # Will be increased in later steps
+MAX_ACCOUNTS=2  # Step 7: Enabled 2 accounts for testing
 
 # Arrays to store account information
 ACCOUNT_USERS=()
