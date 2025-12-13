@@ -21,8 +21,7 @@ error() {
     exit 1
 }
 
-# Multi-account configuration
-MAX_ACCOUNTS=5  # Step 8: Full multi-account support enabled
+MAX_ACCOUNTS=5
 
 # Arrays to store account information
 ACCOUNT_USERS=()
@@ -101,7 +100,7 @@ mkdir -p /var/log/supervisor
 log "Configuring OfflineIMAP..."
 mkdir -p /etc/offlineimap
 
-# Step 2: Create offlineimap helper script with all password functions
+# Create offlineimap helper script for password
 cat > /etc/offlineimap/offlineimap_helper.py << 'PYEOF'
 import os
 
@@ -121,7 +120,7 @@ def get_password_5():
     return os.environ.get('GMAIL_APP_PASSWORD_5', '')
 PYEOF
 
-# Step 6: Create actual offlineimaprc from template with dynamic multi-account support
+# Create actual offlineimaprc from template with dynamic multi-account support
 # Build comma-separated account list
 ACCOUNT_LIST=""
 for i in "${!ACCOUNT_USERS[@]}"; do
@@ -176,7 +175,7 @@ done
 
 chmod 600 /data/offlineimap/.offlineimaprc
 
-# Step 4: Configure Dovecot for multiple accounts
+# Configure Dovecot for multiple accounts
 log "Configuring Dovecot for ${#ACCOUNT_USERS[@]} account(s)..."
 
 # Create Dovecot passwd file for authentication with all accounts
@@ -189,7 +188,8 @@ for i in "${!ACCOUNT_USERS[@]}"; do
     user="${ACCOUNT_USERS[$i]}"
     password="${RAINLOOP_PASSWORDS[$i]}"
     log "  Added Dovecot user: ${user}"
-    echo "${user}:{PLAIN}${password}:${DOVECOT_UID}:${DOVECOT_GID}::/data/mail::" >> /etc/dovecot/users/passwd
+    # Fixed: home directory should be /data/mail/${user} not /data/mail
+    echo "${user}:{PLAIN}${password}:${DOVECOT_UID}:${DOVECOT_GID}::/data/mail/${user}::" >> /etc/dovecot/users/passwd
 done
 
 chmod 644 /etc/dovecot/users/passwd
@@ -214,8 +214,10 @@ passdb {
 }
 
 userdb {
-  driver = static
-  args = uid=vmail gid=vmail home=/data/mail
+  driver = passwd-file
+  args = /etc/dovecot/users/passwd
+  default_fields = uid=vmail gid=vmail
+  override_fields = uid=vmail gid=vmail
 }
 
 log_path = /var/log/dovecot/dovecot.log
@@ -312,6 +314,7 @@ white_list = ""
 EOF
 
 # Create gmail.com.ini pointing to local Dovecot
+# This file will be used when users login with @gmail.com addresses
 cat > /data/rainloop/data/_data_/_default_/domains/gmail.com.ini << EOF
 imap_host = "127.0.0.1"
 imap_port = 143
@@ -362,7 +365,7 @@ exec "$@" &
 # Wait for Dovecot to start
 sleep 5
 
-# Step 5: Build FTS indexes for all accounts if not already built
+# Build FTS indexes for all accounts if not already built
 log "Checking full-text search indexes..."
 for user in "${ACCOUNT_USERS[@]}"; do
     if [ -d "/data/mail/${user}" ] && [ ! -d "/data/mail/${user}/xapian-indexes" ]; then
