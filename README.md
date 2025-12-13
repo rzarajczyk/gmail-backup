@@ -7,7 +7,7 @@ Searchable Gmail backup with OfflineIMAP, Dovecot and Rainloop web interface.
 - **OfflineIMAP**: Periodically syncs emails from Gmail
 - **Dovecot**: Local IMAP server with Xapian full-text search indexing
 - **Rainloop**: Modern web interface for reading and searching emails
-- **Multi-account support**: Backup up to 5 Gmail accounts simultaneously ✨ **NEW**
+- **Multi-account support**: Backup up to 5 Gmail accounts simultaneously
 - **Persistent storage**: All data stored in `/data` volume
 
 ## Prerequisites
@@ -70,7 +70,7 @@ docker run -d \
 
 **Note**: Up to 5 Gmail accounts can be configured simultaneously. Each account requires both `GMAIL_USER_N` and `GMAIL_APP_PASSWORD_N` to be set.
 
-## Multi-Account Configuration ✨
+## Multi-Account Configuration
 
 The container supports up to 5 Gmail accounts simultaneously.
 
@@ -103,7 +103,7 @@ RAINLOOP_PASSWORD_2=second-secure-password
 1. Open your browser and go to: `http://localhost:8080`
 2. Login with:
    - **Email**: Your full Gmail address (e.g., `your.email@gmail.com`)
-   - **Password**: Your `RAINLOOP_PASSWORD_1` (or Gmail App Password if `RAINLOOP_PASSWORD_1` is not set)
+   - **Password**: Your `RAINLOOP_PASSWORD_1`
 
 **Note**: The Gmail App Password is only used by OfflineIMAP to download emails from Gmail. You should set a separate `RAINLOOP_PASSWORD_1` for logging into the Rainloop web interface.
 
@@ -134,23 +134,6 @@ All data is stored in `/data`:
 - `/data/rainloop` - Rainloop configuration and cache (shared)
 - `/data/offlineimap` - OfflineIMAP state and configuration (shared)
 - `/data/dovecot` - Dovecot indexes
-
-### Multi-Account Data Structure
-
-```
-/data/
-├── mail/
-│   ├── first.account@gmail.com/
-│   │   ├── INBOX/
-│   │   ├── Sent/
-│   │   └── xapian-indexes/
-│   └── second.account@gmail.com/
-│       ├── INBOX/
-│       └── ...
-├── rainloop/ (shared)
-├── offlineimap/ (shared)
-└── dovecot/ (shared)
-```
 
 ## Building the Image
 
@@ -188,10 +171,10 @@ docker exec gmail-backup doveadm index -u your.email@gmail.com '*'
 
 ## Ports
 
-| Port | Service | Description |
-|------|---------|-------------|
-| 8080 | Rainloop | Web interface |
-| 143 | IMAP | Local IMAP server (optional, for external clients) |
+| Port | Service  | Description                                        |
+|------|----------|----------------------------------------------------|
+| 8080 | Rainloop | Web interface                                      |
+| 143  | IMAP     | Local IMAP server (optional, for external clients) |
 
 ## Security Considerations
 
@@ -208,8 +191,8 @@ docker exec gmail-backup doveadm index -u your.email@gmail.com '*'
 - View logs: `docker logs gmail-backup`
 
 ### Can't login to Rainloop
-- Make sure you're using the same email and App Password
 - Check that Dovecot is running: `docker exec gmail-backup pgrep dovecot`
+- Check that IMAP authorization is passing: `docker exec -ti gmail-backup doveadm auth test your.email@gmail.com`
 
 ### Search not working
 - Wait for initial indexing to complete after first sync
@@ -217,15 +200,6 @@ docker exec gmail-backup doveadm index -u your.email@gmail.com '*'
 - Check Dovecot logs for FTS errors
 
 ### Multi-Account Issues
-
-**Account not syncing**
-- Verify both `GMAIL_USER_N` and `GMAIL_APP_PASSWORD_N` are set
-- Check logs for specific account errors: `docker logs gmail-backup`
-- Each account requires its own App Password from Google
-
-**Can't login with second account**
-- Ensure `RAINLOOP_PASSWORD_N` is set (or it defaults to `GMAIL_APP_PASSWORD_N`)
-- Check Dovecot passwd file: `docker exec gmail-backup cat /etc/dovecot/users/passwd`
 
 **Too many accounts error**
 - Maximum 5 accounts supported
