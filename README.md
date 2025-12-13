@@ -7,7 +7,7 @@ Searchable Gmail backup with OfflineIMAP, Dovecot and Rainloop web interface.
 - **OfflineIMAP**: Periodically syncs emails from Gmail
 - **Dovecot**: Local IMAP server with Xapian full-text search indexing
 - **Rainloop**: Modern web interface for reading and searching emails
-- **Multi-account support**: Backup up to 5 Gmail accounts simultaneously (currently limited to 1)
+- **Multi-account support**: Backup up to 5 Gmail accounts simultaneously ✨ **NEW**
 - **Persistent storage**: All data stored in `/data` volume
 
 ## Prerequisites
@@ -68,13 +68,13 @@ docker run -d \
 | `GMAIL_USER_3..5`        | No       | -                                | Additional accounts (3, 4, 5) - same pattern as above       |
 | `SYNC_INTERVAL`          | No       | `3600`                           | Sync interval in seconds (default: 1 hour)                  |
 
-**Note**: Currently limited to 1 account. Multi-account support (2-5 accounts) will be enabled in future releases.
+**Note**: Up to 5 Gmail accounts can be configured simultaneously. Each account requires both `GMAIL_USER_N` and `GMAIL_APP_PASSWORD_N` to be set.
 
-## Multi-Account Configuration (Coming Soon)
+## Multi-Account Configuration ✨
 
-The container is designed to support up to 5 Gmail accounts simultaneously. Currently limited to 1 account.
+The container supports up to 5 Gmail accounts simultaneously.
 
-### Future Multi-Account Setup Example
+### Multi-Account Setup Example
 
 ```bash
 # Account 1 (Required)
@@ -107,9 +107,9 @@ RAINLOOP_PASSWORD_2=second-secure-password
 
 **Note**: The Gmail App Password is only used by OfflineIMAP to download emails from Gmail. You should set a separate `RAINLOOP_PASSWORD_1` for logging into the Rainloop web interface.
 
-### Multi-Account Login (Future)
+### Multi-Account Login
 
-When multi-account is enabled, login with any configured account:
+With multiple accounts configured, login with any account:
 - Use the corresponding email address
 - Use the corresponding `RAINLOOP_PASSWORD_N` for that account
 
@@ -135,7 +135,7 @@ All data is stored in `/data`:
 - `/data/offlineimap` - OfflineIMAP state and configuration (shared)
 - `/data/dovecot` - Dovecot indexes
 
-### Multi-Account Data Structure (Future)
+### Multi-Account Data Structure
 
 ```
 /data/
@@ -216,7 +216,7 @@ docker exec gmail-backup doveadm index -u your.email@gmail.com '*'
 - Manually trigger reindex (see above)
 - Check Dovecot logs for FTS errors
 
-### Multi-Account Issues (Future)
+### Multi-Account Issues
 
 **Account not syncing**
 - Verify both `GMAIL_USER_N` and `GMAIL_APP_PASSWORD_N` are set
@@ -228,8 +228,8 @@ docker exec gmail-backup doveadm index -u your.email@gmail.com '*'
 - Check Dovecot passwd file: `docker exec gmail-backup cat /etc/dovecot/users/passwd`
 
 **Too many accounts error**
-- Currently limited to 1 account (will be increased to 5)
-- Remove extra account variables from `.env` file
+- Maximum 5 accounts supported
+- Remove extra account variables from `.env` file if you have more than 5
 
 **Duplicate username error**
 - Each account must have a unique email address
