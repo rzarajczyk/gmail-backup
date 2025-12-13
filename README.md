@@ -24,9 +24,9 @@ Searchable Gmail backup with OfflineIMAP, Dovecot and Rainloop web interface.
 
 1. Create a `.env` file:
 ```bash
-GMAIL_USER=your.email@gmail.com
-GMAIL_APP_PASSWORD=your-app-password
-RAINLOOP_PASSWORD=your-secure-password
+GMAIL_USER_1=your.email@gmail.com
+GMAIL_APP_PASSWORD_1=your-app-password
+RAINLOOP_PASSWORD_1=your-secure-password
 ```
 
 2. Start the container:
@@ -46,9 +46,9 @@ docker-compose -f docker-compose.prod.yml up -d
 ```bash
 docker run -d \
   --name gmail-backup \
-  -e GMAIL_USER=your.email@gmail.com \
-  -e GMAIL_APP_PASSWORD=your-app-password \
-  -e RAINLOOP_PASSWORD=your-secure-password \
+  -e GMAIL_USER_1=your.email@gmail.com \
+  -e GMAIL_APP_PASSWORD_1=your-app-password \
+  -e RAINLOOP_PASSWORD_1=your-secure-password \
   -p 8080:8080 \
   -v gmail_data:/data \
   gmail-backup
@@ -56,11 +56,11 @@ docker run -d \
 
 ## Environment Variables
 
-| Variable             | Required | Default                      | Description                                                 |
-|----------------------|----------|------------------------------|-------------------------------------------------------------|
-| `GMAIL_USER`         | **Yes**  | -                            | Your Gmail address                                          |
-| `GMAIL_APP_PASSWORD` | **Yes**  | -                            | Gmail App Password (used by OfflineIMAP to download emails) |
-| `RAINLOOP_PASSWORD`  | No       | Same as `GMAIL_APP_PASSWORD` | Password for Rainloop web interface login                   |
+| Variable                 | Required | Default                          | Description                                                 |
+|--------------------------|----------|----------------------------------|-------------------------------------------------------------|
+| `GMAIL_USER_1`           | **Yes**  | -                                | Your Gmail address                                          |
+| `GMAIL_APP_PASSWORD_1`   | **Yes**  | -                                | Gmail App Password (used by OfflineIMAP to download emails) |
+| `RAINLOOP_PASSWORD_1`    | No       | Same as `GMAIL_APP_PASSWORD_1`   | Password for Rainloop web interface login                   |
 | `SYNC_INTERVAL`      | No       | `3600`                       | Sync interval in seconds (default: 1 hour)                  |
 
 ## Accessing the Web Interface
@@ -68,9 +68,9 @@ docker run -d \
 1. Open your browser and go to: `http://localhost:8080`
 2. Login with:
    - **Email**: Your full Gmail address (e.g., `your.email@gmail.com`)
-   - **Password**: Your `RAINLOOP_PASSWORD` (or Gmail App Password if `RAINLOOP_PASSWORD` is not set)
+   - **Password**: Your `RAINLOOP_PASSWORD_1` (or Gmail App Password if `RAINLOOP_PASSWORD_1` is not set)
 
-**Note**: The Gmail App Password is only used by OfflineIMAP to download emails from Gmail. You should set a separate `RAINLOOP_PASSWORD` for logging into the Rainloop web interface.
+**Note**: The Gmail App Password is only used by OfflineIMAP to download emails from Gmail. You should set a separate `RAINLOOP_PASSWORD_1` for logging into the Rainloop web interface.
 
 ### Rainloop Admin Panel
 

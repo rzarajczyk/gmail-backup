@@ -4,9 +4,9 @@ LABEL maintainer="Gmail Backup Container"
 LABEL description="Gmail backup with OfflineIMAP, Dovecot and Rainloop"
 
 # Environment variables with defaults
-ENV GMAIL_USER=""
-ENV GMAIL_APP_PASSWORD=""
-ENV RAINLOOP_PASSWORD=""
+ENV GMAIL_USER_1=""
+ENV GMAIL_APP_PASSWORD_1=""
+ENV RAINLOOP_PASSWORD_1=""
 ENV SYNC_INTERVAL=3600
 ENV DOVECOT_USER=vmail
 ENV DOVECOT_UID=1000

@@ -27,8 +27,8 @@ while true; do
             # Trigger FTS index update after sync
             if command -v doveadm &> /dev/null; then
                 log "Updating full-text search index..."
-                doveadm fts rescan -u "${GMAIL_USER}" 2>/dev/null || true
-                doveadm index -u "${GMAIL_USER}" '*' 2>/dev/null || true
+                doveadm fts rescan -u "${GMAIL_USER_1}" 2>/dev/null || true
+                doveadm index -u "${GMAIL_USER_1}" '*' 2>/dev/null || true
                 log "FTS index update completed"
             fi
         else

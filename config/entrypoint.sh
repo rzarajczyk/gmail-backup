@@ -22,26 +22,26 @@ error() {
 }
 
 # Check required environment variables
-if [ -z "$GMAIL_USER" ]; then
-    error "GMAIL_USER environment variable is required"
+if [ -z "$GMAIL_USER_1" ]; then
+    error "GMAIL_USER_1 environment variable is required"
 fi
 
-if [ -z "$GMAIL_APP_PASSWORD" ]; then
-    error "GMAIL_APP_PASSWORD environment variable is required"
+if [ -z "$GMAIL_APP_PASSWORD_1" ]; then
+    error "GMAIL_APP_PASSWORD_1 environment variable is required"
 fi
 
-if [ -z "$RAINLOOP_PASSWORD" ]; then
-    warn "RAINLOOP_PASSWORD not set, using GMAIL_APP_PASSWORD for Rainloop login"
-    RAINLOOP_PASSWORD="$GMAIL_APP_PASSWORD"
+if [ -z "$RAINLOOP_PASSWORD_1" ]; then
+    warn "RAINLOOP_PASSWORD_1 not set, using GMAIL_APP_PASSWORD_1 for Rainloop login"
+    RAINLOOP_PASSWORD_1="$GMAIL_APP_PASSWORD_1"
 fi
 
 log "Starting Gmail Backup Container"
-log "Gmail User: $GMAIL_USER"
+log "Gmail User: $GMAIL_USER_1"
 log "Sync Interval: ${SYNC_INTERVAL:-3600}s"
 
 # Create data directories if they don't exist
 log "Setting up data directories..."
-mkdir -p "/data/mail/${GMAIL_USER}"
+mkdir -p "/data/mail/${GMAIL_USER_1}"
 mkdir -p /data/rainloop
 mkdir -p /data/dovecot
 mkdir -p /data/offlineimap
@@ -57,19 +57,19 @@ mkdir -p /etc/offlineimap
 cat > /etc/offlineimap/offlineimap_helper.py << 'PYEOF'
 import os
 
-def get_password():
-    return os.environ.get('GMAIL_APP_PASSWORD', '')
+def get_password_1():
+    return os.environ.get('GMAIL_APP_PASSWORD_1', '')
 PYEOF
 
 # Create actual offlineimaprc from template
 cat > /data/offlineimap/.offlineimaprc << EOF
 [general]
-accounts = ${GMAIL_USER}
+accounts = ${GMAIL_USER_1}
 maxsyncaccounts = 1
 pythonfile = /etc/offlineimap/offlineimap_helper.py
 metadata = /data/offlineimap
 
-[Account ${GMAIL_USER}]
+[Account ${GMAIL_USER_1}]
 localrepository = Local
 remoterepository = Remote
 synclabels = yes
@@ -77,13 +77,13 @@ labelsheader = X-Keywords
 
 [Repository Local]
 type = Maildir
-localfolders = /data/mail/${GMAIL_USER}
+localfolders = /data/mail/${GMAIL_USER_1}
 sync_deletes = no
 
 [Repository Remote]
 type = Gmail
-remoteuser = ${GMAIL_USER}
-remotepasseval = get_password()
+remoteuser = ${GMAIL_USER_1}
+remotepasseval = get_password_1()
 realdelete = no
 ssl = yes
 sslcacertfile = /etc/ssl/certs/ca-certificates.crt
@@ -96,12 +96,12 @@ chmod 600 /data/offlineimap/.offlineimaprc
 
 # Configure Dovecot password
 log "Configuring Dovecot..."
-export DOVECOT_PASSWORD="${RAINLOOP_PASSWORD}"
+export DOVECOT_PASSWORD="${RAINLOOP_PASSWORD_1}"
 
 # Create Dovecot passwd file for authentication
 mkdir -p /etc/dovecot/users
 cat > /etc/dovecot/users/passwd << EOF
-${GMAIL_USER}:{PLAIN}${RAINLOOP_PASSWORD}:${DOVECOT_UID}:${DOVECOT_GID}::/data/mail::
+${GMAIL_USER_1}:{PLAIN}${RAINLOOP_PASSWORD_1}:${DOVECOT_UID}:${DOVECOT_GID}::/data/mail::
 EOF
 chmod 644 /etc/dovecot/users/passwd
 chown dovecot:dovecot /etc/dovecot/users/passwd
@@ -112,7 +112,7 @@ cat > /etc/dovecot/dovecot.conf << DOVEOF
 
 protocols = imap
 listen = *
-mail_location = maildir:/data/mail/${GMAIL_USER}:LAYOUT=fs:INBOX=/data/mail/${GMAIL_USER}/INBOX
+mail_location = maildir:/data/mail/${GMAIL_USER_1}:LAYOUT=fs:INBOX=/data/mail/${GMAIL_USER_1}/INBOX
 mail_uid = vmail
 mail_gid = vmail
 ssl = no
@@ -260,7 +260,7 @@ log "Rainloop Web UI: http://localhost:${RAINLOOP_PORT:-8080}"
 log "Rainloop Admin: http://localhost:${RAINLOOP_PORT:-8080}/?admin"
 log "Default admin login: admin / 12345"
 log "IMAP Server: localhost:143"
-log "Login with: ${GMAIL_USER}"
+log "Login with: ${GMAIL_USER_1}"
 log "============================================"
 log "Starting services..."
 
@@ -271,10 +271,10 @@ exec "$@" &
 sleep 5
 
 # Build FTS indexes for existing emails if not already built
-if [ -d "/data/mail/${GMAIL_USER}" ] && [ ! -d "/data/mail/${GMAIL_USER}/xapian-indexes" ]; then
+if [ -d "/data/mail/${GMAIL_USER_1}" ] && [ ! -d "/data/mail/${GMAIL_USER_1}/xapian-indexes" ]; then
     log "Building full-text search indexes for existing emails..."
-    doveadm fts rescan -u "${GMAIL_USER}" 2>/dev/null || true
-    doveadm index -u "${GMAIL_USER}" '*' 2>/dev/null || true
+    doveadm fts rescan -u "${GMAIL_USER_1}" 2>/dev/null || true
+    doveadm index -u "${GMAIL_USER_1}" '*' 2>/dev/null || true
     log "Full-text search indexes built successfully"
 fi
 
