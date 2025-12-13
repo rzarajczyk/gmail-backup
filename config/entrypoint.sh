@@ -37,7 +37,7 @@ fi
 
 log "Starting Gmail Backup Container"
 log "Gmail User: $GMAIL_USER"
-log "Sync Interval: ${SYNC_INTERVAL:-300}s"
+log "Sync Interval: ${SYNC_INTERVAL:-3600}s"
 
 # Create data directories if they don't exist
 log "Setting up data directories..."

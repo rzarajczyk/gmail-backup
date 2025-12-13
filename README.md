@@ -30,8 +30,15 @@ RAINLOOP_PASSWORD=your-secure-password
 ```
 
 2. Start the container:
+
+**Development mode** (with local build):
 ```bash
-docker-compose up -d
+docker-compose -f docker-compose.dev.yml up --build -d
+```
+
+**Production mode** (using pre-built image):
+```bash
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ### Using Docker Run
@@ -54,7 +61,7 @@ docker run -d \
 | `GMAIL_USER`         | **Yes**  | -                            | Your Gmail address                                          |
 | `GMAIL_APP_PASSWORD` | **Yes**  | -                            | Gmail App Password (used by OfflineIMAP to download emails) |
 | `RAINLOOP_PASSWORD`  | No       | Same as `GMAIL_APP_PASSWORD` | Password for Rainloop web interface login                   |
-| `SYNC_INTERVAL`      | No       | `300`                        | Sync interval in seconds (default: 5 minutes)               |
+| `SYNC_INTERVAL`      | No       | `3600`                       | Sync interval in seconds (default: 1 hour)                  |
 
 ## Accessing the Web Interface
 

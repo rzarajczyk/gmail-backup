@@ -24,7 +24,7 @@ services:
       - GMAIL_APP_PASSWORD_5=${GMAIL_APP_PASSWORD_5:-}
       - RAINLOOP_PASSWORD_5=${RAINLOOP_PASSWORD_5:-}
       # Optional parameters with defaults
-      - SYNC_INTERVAL=${SYNC_INTERVAL:-300}
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-3600}
       - RAINLOOP_PORT=${RAINLOOP_PORT:-8080}
     ports:
       - "${RAINLOOP_PORT:-8080}:8080"

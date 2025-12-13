@@ -5,7 +5,7 @@
 
 set -e
 
-SYNC_INTERVAL=${SYNC_INTERVAL:-300}
+SYNC_INTERVAL=${SYNC_INTERVAL:-3600}
 OFFLINEIMAP_CONFIG="/data/offlineimap/.offlineimaprc"
 
 log() {
