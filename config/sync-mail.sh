@@ -24,12 +24,19 @@ while true; do
         if offlineimap -c "$OFFLINEIMAP_CONFIG" -u quiet; then
             log "Mail sync completed successfully"
 
-            # Trigger FTS index update after sync
-            # Note: For now, only update first account. Multi-account FTS will come in later steps.
-            if command -v doveadm &> /dev/null && [ -n "${GMAIL_USER_1}" ]; then
-                log "Updating full-text search index..."
-                doveadm fts rescan -u "${GMAIL_USER_1}" 2>/dev/null || true
-                doveadm index -u "${GMAIL_USER_1}" '*' 2>/dev/null || true
+            # Step 5: Trigger FTS index update after sync for all accounts
+            if command -v doveadm &> /dev/null; then
+                log "Updating full-text search indexes..."
+                # Loop through all configured accounts (1-5)
+                for i in {1..5}; do
+                    user_var="GMAIL_USER_${i}"
+                    user="${!user_var}"
+                    if [ -n "$user" ]; then
+                        log "  Updating FTS index for ${user}..."
+                        doveadm fts rescan -u "${user}" 2>/dev/null || true
+                        doveadm index -u "${user}" '*' 2>/dev/null || true
+                    fi
+                done
                 log "FTS index update completed"
             fi
         else

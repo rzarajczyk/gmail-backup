@@ -121,29 +121,50 @@ def get_password_5():
     return os.environ.get('GMAIL_APP_PASSWORD_5', '')
 PYEOF
 
-# Create actual offlineimaprc from template (using arrays)
+# Step 6: Create actual offlineimaprc from template with dynamic multi-account support
+# Build comma-separated account list
+ACCOUNT_LIST=""
+for i in "${!ACCOUNT_USERS[@]}"; do
+    if [ -n "$ACCOUNT_LIST" ]; then
+        ACCOUNT_LIST="${ACCOUNT_LIST}, ${ACCOUNT_USERS[$i]}"
+    else
+        ACCOUNT_LIST="${ACCOUNT_USERS[$i]}"
+    fi
+done
+
+log "Configuring OfflineIMAP for ${#ACCOUNT_USERS[@]} account(s)..."
+
 cat > /data/offlineimap/.offlineimaprc << EOF
 [general]
-accounts = ${ACCOUNT_USERS[0]}
-maxsyncaccounts = 1
+accounts = ${ACCOUNT_LIST}
+maxsyncaccounts = ${#ACCOUNT_USERS[@]}
 pythonfile = /etc/offlineimap/offlineimap_helper.py
 metadata = /data/offlineimap
+EOF
 
-[Account ${ACCOUNT_USERS[0]}]
-localrepository = Local
-remoterepository = Remote
+# Generate account sections dynamically
+for i in "${!ACCOUNT_USERS[@]}"; do
+    account_num=$((i + 1))
+    user="${ACCOUNT_USERS[$i]}"
+    log "  Creating OfflineIMAP config for ${user}"
+    
+    cat >> /data/offlineimap/.offlineimaprc << EOF
+
+[Account ${user}]
+localrepository = Local_${account_num}
+remoterepository = Remote_${account_num}
 synclabels = yes
 labelsheader = X-Keywords
 
-[Repository Local]
+[Repository Local_${account_num}]
 type = Maildir
-localfolders = /data/mail/${ACCOUNT_USERS[0]}
+localfolders = /data/mail/${user}
 sync_deletes = no
 
-[Repository Remote]
+[Repository Remote_${account_num}]
 type = Gmail
-remoteuser = ${ACCOUNT_USERS[0]}
-remotepasseval = get_password_1()
+remoteuser = ${user}
+remotepasseval = get_password_${account_num}()
 realdelete = no
 ssl = yes
 sslcacertfile = /etc/ssl/certs/ca-certificates.crt
@@ -151,28 +172,36 @@ maxconnections = 3
 folderfilter = lambda folder: folder not in ['[Gmail]/All Mail', '[Gmail]/Important', '[Gmail]/Starred']
 nametrans = lambda folder: folder.replace('[Gmail]/', '').replace(' ', '_')
 EOF
+done
 
 chmod 600 /data/offlineimap/.offlineimaprc
 
-# Configure Dovecot password (using arrays)
-log "Configuring Dovecot..."
-export DOVECOT_PASSWORD="${RAINLOOP_PASSWORDS[0]}"
+# Step 4: Configure Dovecot for multiple accounts
+log "Configuring Dovecot for ${#ACCOUNT_USERS[@]} account(s)..."
 
-# Create Dovecot passwd file for authentication (using arrays)
+# Create Dovecot passwd file for authentication with all accounts
 mkdir -p /etc/dovecot/users
 cat > /etc/dovecot/users/passwd << EOF
-${ACCOUNT_USERS[0]}:{PLAIN}${RAINLOOP_PASSWORDS[0]}:${DOVECOT_UID}:${DOVECOT_GID}::/data/mail::
 EOF
+
+# Loop through all accounts and add to passwd file
+for i in "${!ACCOUNT_USERS[@]}"; do
+    user="${ACCOUNT_USERS[$i]}"
+    password="${RAINLOOP_PASSWORDS[$i]}"
+    log "  Added Dovecot user: ${user}"
+    echo "${user}:{PLAIN}${password}:${DOVECOT_UID}:${DOVECOT_GID}::/data/mail::" >> /etc/dovecot/users/passwd
+done
+
 chmod 644 /etc/dovecot/users/passwd
 chown dovecot:dovecot /etc/dovecot/users/passwd
 
-# Update dovecot config to use passwd file
+# Update dovecot config to use passwd file with %u variable for multi-account
 cat > /etc/dovecot/dovecot.conf << DOVEOF
 # Dovecot configuration for Gmail backup
 
 protocols = imap
 listen = *
-mail_location = maildir:/data/mail/${ACCOUNT_USERS[0]}:LAYOUT=fs:INBOX=/data/mail/${ACCOUNT_USERS[0]}/INBOX
+mail_location = maildir:/data/mail/%u:LAYOUT=fs:INBOX=/data/mail/%u/INBOX
 mail_uid = vmail
 mail_gid = vmail
 ssl = no
@@ -320,7 +349,10 @@ log "Rainloop Web UI: http://localhost:${RAINLOOP_PORT:-8080}"
 log "Rainloop Admin: http://localhost:${RAINLOOP_PORT:-8080}/?admin"
 log "Default admin login: admin / 12345"
 log "IMAP Server: localhost:143"
-log "Login with: ${ACCOUNT_USERS[0]}"
+log "Configured accounts:"
+for user in "${ACCOUNT_USERS[@]}"; do
+    log "  - ${user}"
+done
 log "============================================"
 log "Starting services..."
 
@@ -330,13 +362,16 @@ exec "$@" &
 # Wait for Dovecot to start
 sleep 5
 
-# Build FTS indexes for existing emails if not already built
-if [ -d "/data/mail/${ACCOUNT_USERS[0]}" ] && [ ! -d "/data/mail/${ACCOUNT_USERS[0]}/xapian-indexes" ]; then
-    log "Building full-text search indexes for existing emails..."
-    doveadm fts rescan -u "${ACCOUNT_USERS[0]}" 2>/dev/null || true
-    doveadm index -u "${ACCOUNT_USERS[0]}" '*' 2>/dev/null || true
-    log "Full-text search indexes built successfully"
-fi
+# Step 5: Build FTS indexes for all accounts if not already built
+log "Checking full-text search indexes..."
+for user in "${ACCOUNT_USERS[@]}"; do
+    if [ -d "/data/mail/${user}" ] && [ ! -d "/data/mail/${user}/xapian-indexes" ]; then
+        log "Building full-text search indexes for ${user}..."
+        doveadm fts rescan -u "${user}" 2>/dev/null || true
+        doveadm index -u "${user}" '*' 2>/dev/null || true
+    fi
+done
+log "Full-text search indexes ready"
 
 # Wait for background process
 wait
