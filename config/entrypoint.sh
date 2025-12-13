@@ -41,7 +41,7 @@ log "Sync Interval: ${SYNC_INTERVAL:-300}s"
 
 # Create data directories if they don't exist
 log "Setting up data directories..."
-mkdir -p /data/mail/gmail
+mkdir -p "/data/mail/${GMAIL_USER}"
 mkdir -p /data/rainloop
 mkdir -p /data/dovecot
 mkdir -p /data/offlineimap
@@ -64,12 +64,12 @@ PYEOF
 # Create actual offlineimaprc from template
 cat > /data/offlineimap/.offlineimaprc << EOF
 [general]
-accounts = Gmail
+accounts = ${GMAIL_USER}
 maxsyncaccounts = 1
 pythonfile = /etc/offlineimap/offlineimap_helper.py
 metadata = /data/offlineimap
 
-[Account Gmail]
+[Account ${GMAIL_USER}]
 localrepository = Local
 remoterepository = Remote
 synclabels = yes
@@ -77,7 +77,7 @@ labelsheader = X-Keywords
 
 [Repository Local]
 type = Maildir
-localfolders = /data/mail/gmail
+localfolders = /data/mail/${GMAIL_USER}
 sync_deletes = no
 
 [Repository Remote]
@@ -107,12 +107,12 @@ chmod 644 /etc/dovecot/users/passwd
 chown dovecot:dovecot /etc/dovecot/users/passwd
 
 # Update dovecot config to use passwd file
-cat > /etc/dovecot/dovecot.conf << 'DOVEOF'
+cat > /etc/dovecot/dovecot.conf << DOVEOF
 # Dovecot configuration for Gmail backup
 
 protocols = imap
 listen = *
-mail_location = maildir:/data/mail/gmail:LAYOUT=fs:INBOX=/data/mail/gmail/INBOX
+mail_location = maildir:/data/mail/${GMAIL_USER}:LAYOUT=fs:INBOX=/data/mail/${GMAIL_USER}/INBOX
 mail_uid = vmail
 mail_gid = vmail
 ssl = no
@@ -271,7 +271,7 @@ exec "$@" &
 sleep 5
 
 # Build FTS indexes for existing emails if not already built
-if [ -d "/data/mail/gmail" ] && [ ! -d "/data/mail/gmail/xapian-indexes" ]; then
+if [ -d "/data/mail/${GMAIL_USER}" ] && [ ! -d "/data/mail/${GMAIL_USER}/xapian-indexes" ]; then
     log "Building full-text search indexes for existing emails..."
     doveadm fts rescan -u "${GMAIL_USER}" 2>/dev/null || true
     doveadm index -u "${GMAIL_USER}" '*' 2>/dev/null || true

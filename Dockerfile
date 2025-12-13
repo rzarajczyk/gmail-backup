@@ -47,7 +47,6 @@ RUN curl -sL https://repository.rainloop.net/installer.php -o /var/www/rainloop/
     && chown -R www-data:www-data /var/www/rainloop
 
 # Copy configuration files
-COPY config/dovecot.conf /etc/dovecot/dovecot.conf
 COPY config/nginx.conf /etc/nginx/sites-available/default
 COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY config/sync-mail.sh /usr/local/bin/sync-mail.sh
