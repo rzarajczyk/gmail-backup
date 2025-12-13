@@ -21,27 +21,75 @@ error() {
     exit 1
 }
 
-# Check required environment variables
-if [ -z "$GMAIL_USER_1" ]; then
-    error "GMAIL_USER_1 environment variable is required"
-fi
+# Multi-account configuration
+MAX_ACCOUNTS=1  # Will be increased in later steps
 
-if [ -z "$GMAIL_APP_PASSWORD_1" ]; then
-    error "GMAIL_APP_PASSWORD_1 environment variable is required"
-fi
+# Arrays to store account information
+ACCOUNT_USERS=()
+ACCOUNT_PASSWORDS=()
+RAINLOOP_PASSWORDS=()
 
-if [ -z "$RAINLOOP_PASSWORD_1" ]; then
-    warn "RAINLOOP_PASSWORD_1 not set, using GMAIL_APP_PASSWORD_1 for Rainloop login"
-    RAINLOOP_PASSWORD_1="$GMAIL_APP_PASSWORD_1"
-fi
+# Discover configured accounts
+discover_accounts() {
+    log "Discovering configured accounts..."
+    local account_count=0
+    
+    for i in {1..5}; do
+        local user_var="GMAIL_USER_${i}"
+        local pass_var="GMAIL_APP_PASSWORD_${i}"
+        local rainloop_var="RAINLOOP_PASSWORD_${i}"
+        
+        local user="${!user_var}"
+        local password="${!pass_var}"
+        local rainloop_pass="${!rainloop_var}"
+        
+        if [ -n "$user" ] && [ -n "$password" ]; then
+            account_count=$((account_count + 1))
+            
+            # Enforce MAX_ACCOUNTS limit
+            if [ $account_count -gt $MAX_ACCOUNTS ]; then
+                error "Too many accounts configured. Currently limited to $MAX_ACCOUNTS account(s). Found account $i: $user"
+            fi
+            
+            ACCOUNT_USERS+=("$user")
+            ACCOUNT_PASSWORDS+=("$password")
+            
+            # Use RAINLOOP_PASSWORD or fallback to GMAIL_APP_PASSWORD
+            if [ -z "$rainloop_pass" ]; then
+                warn "RAINLOOP_PASSWORD_${i} not set for $user, using GMAIL_APP_PASSWORD_${i}"
+                RAINLOOP_PASSWORDS+=("$password")
+            else
+                RAINLOOP_PASSWORDS+=("$rainloop_pass")
+            fi
+            
+            log "  Account ${i}: ${user}"
+        elif [ -n "$user" ] || [ -n "$password" ]; then
+            error "Incomplete configuration for account ${i}. Both GMAIL_USER_${i} and GMAIL_APP_PASSWORD_${i} are required."
+        fi
+    done
+    
+    if [ ${#ACCOUNT_USERS[@]} -eq 0 ]; then
+        error "No accounts configured. At least GMAIL_USER_1 and GMAIL_APP_PASSWORD_1 are required."
+    fi
+    
+    log "Found ${#ACCOUNT_USERS[@]} account(s)"
+}
+
+# Discover accounts
+discover_accounts
 
 log "Starting Gmail Backup Container"
-log "Gmail User: $GMAIL_USER_1"
 log "Sync Interval: ${SYNC_INTERVAL:-3600}s"
 
 # Create data directories if they don't exist
 log "Setting up data directories..."
-mkdir -p "/data/mail/${GMAIL_USER_1}"
+
+# Step 3: Create directories for all discovered accounts
+for user in "${ACCOUNT_USERS[@]}"; do
+    log "  Creating mail directory for: ${user}"
+    mkdir -p "/data/mail/${user}"
+done
+
 mkdir -p /data/rainloop
 mkdir -p /data/dovecot
 mkdir -p /data/offlineimap
@@ -53,23 +101,35 @@ mkdir -p /var/log/supervisor
 log "Configuring OfflineIMAP..."
 mkdir -p /etc/offlineimap
 
-# Create offlineimap helper script for password
+# Step 2: Create offlineimap helper script with all password functions
 cat > /etc/offlineimap/offlineimap_helper.py << 'PYEOF'
 import os
 
 def get_password_1():
     return os.environ.get('GMAIL_APP_PASSWORD_1', '')
+
+def get_password_2():
+    return os.environ.get('GMAIL_APP_PASSWORD_2', '')
+
+def get_password_3():
+    return os.environ.get('GMAIL_APP_PASSWORD_3', '')
+
+def get_password_4():
+    return os.environ.get('GMAIL_APP_PASSWORD_4', '')
+
+def get_password_5():
+    return os.environ.get('GMAIL_APP_PASSWORD_5', '')
 PYEOF
 
-# Create actual offlineimaprc from template
+# Create actual offlineimaprc from template (using arrays)
 cat > /data/offlineimap/.offlineimaprc << EOF
 [general]
-accounts = ${GMAIL_USER_1}
+accounts = ${ACCOUNT_USERS[0]}
 maxsyncaccounts = 1
 pythonfile = /etc/offlineimap/offlineimap_helper.py
 metadata = /data/offlineimap
 
-[Account ${GMAIL_USER_1}]
+[Account ${ACCOUNT_USERS[0]}]
 localrepository = Local
 remoterepository = Remote
 synclabels = yes
@@ -77,12 +137,12 @@ labelsheader = X-Keywords
 
 [Repository Local]
 type = Maildir
-localfolders = /data/mail/${GMAIL_USER_1}
+localfolders = /data/mail/${ACCOUNT_USERS[0]}
 sync_deletes = no
 
 [Repository Remote]
 type = Gmail
-remoteuser = ${GMAIL_USER_1}
+remoteuser = ${ACCOUNT_USERS[0]}
 remotepasseval = get_password_1()
 realdelete = no
 ssl = yes
@@ -94,14 +154,14 @@ EOF
 
 chmod 600 /data/offlineimap/.offlineimaprc
 
-# Configure Dovecot password
+# Configure Dovecot password (using arrays)
 log "Configuring Dovecot..."
-export DOVECOT_PASSWORD="${RAINLOOP_PASSWORD_1}"
+export DOVECOT_PASSWORD="${RAINLOOP_PASSWORDS[0]}"
 
-# Create Dovecot passwd file for authentication
+# Create Dovecot passwd file for authentication (using arrays)
 mkdir -p /etc/dovecot/users
 cat > /etc/dovecot/users/passwd << EOF
-${GMAIL_USER_1}:{PLAIN}${RAINLOOP_PASSWORD_1}:${DOVECOT_UID}:${DOVECOT_GID}::/data/mail::
+${ACCOUNT_USERS[0]}:{PLAIN}${RAINLOOP_PASSWORDS[0]}:${DOVECOT_UID}:${DOVECOT_GID}::/data/mail::
 EOF
 chmod 644 /etc/dovecot/users/passwd
 chown dovecot:dovecot /etc/dovecot/users/passwd
@@ -112,7 +172,7 @@ cat > /etc/dovecot/dovecot.conf << DOVEOF
 
 protocols = imap
 listen = *
-mail_location = maildir:/data/mail/${GMAIL_USER_1}:LAYOUT=fs:INBOX=/data/mail/${GMAIL_USER_1}/INBOX
+mail_location = maildir:/data/mail/${ACCOUNT_USERS[0]}:LAYOUT=fs:INBOX=/data/mail/${ACCOUNT_USERS[0]}/INBOX
 mail_uid = vmail
 mail_gid = vmail
 ssl = no
@@ -260,7 +320,7 @@ log "Rainloop Web UI: http://localhost:${RAINLOOP_PORT:-8080}"
 log "Rainloop Admin: http://localhost:${RAINLOOP_PORT:-8080}/?admin"
 log "Default admin login: admin / 12345"
 log "IMAP Server: localhost:143"
-log "Login with: ${GMAIL_USER_1}"
+log "Login with: ${ACCOUNT_USERS[0]}"
 log "============================================"
 log "Starting services..."
 
@@ -271,10 +331,10 @@ exec "$@" &
 sleep 5
 
 # Build FTS indexes for existing emails if not already built
-if [ -d "/data/mail/${GMAIL_USER_1}" ] && [ ! -d "/data/mail/${GMAIL_USER_1}/xapian-indexes" ]; then
+if [ -d "/data/mail/${ACCOUNT_USERS[0]}" ] && [ ! -d "/data/mail/${ACCOUNT_USERS[0]}/xapian-indexes" ]; then
     log "Building full-text search indexes for existing emails..."
-    doveadm fts rescan -u "${GMAIL_USER_1}" 2>/dev/null || true
-    doveadm index -u "${GMAIL_USER_1}" '*' 2>/dev/null || true
+    doveadm fts rescan -u "${ACCOUNT_USERS[0]}" 2>/dev/null || true
+    doveadm index -u "${ACCOUNT_USERS[0]}" '*' 2>/dev/null || true
     log "Full-text search indexes built successfully"
 fi
 

@@ -25,7 +25,8 @@ while true; do
             log "Mail sync completed successfully"
 
             # Trigger FTS index update after sync
-            if command -v doveadm &> /dev/null; then
+            # Note: For now, only update first account. Multi-account FTS will come in later steps.
+            if command -v doveadm &> /dev/null && [ -n "${GMAIL_USER_1}" ]; then
                 log "Updating full-text search index..."
                 doveadm fts rescan -u "${GMAIL_USER_1}" 2>/dev/null || true
                 doveadm index -u "${GMAIL_USER_1}" '*' 2>/dev/null || true
