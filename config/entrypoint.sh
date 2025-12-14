@@ -165,6 +165,7 @@ type = Gmail
 remoteuser = ${user}
 remotepasseval = get_password_${account_num}()
 realdelete = no
+readonly = True
 ssl = yes
 sslcacertfile = /etc/ssl/certs/ca-certificates.crt
 maxconnections = 3

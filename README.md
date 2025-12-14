@@ -176,6 +176,35 @@ docker exec gmail-backup doveadm index -u your.email@gmail.com '*'
 | 8080 | Rainloop | Web interface                                      |
 | 143  | IMAP     | Local IMAP server (optional, for external clients) |
 
+## Backup Safety
+
+**Important**: While OfflineIMAP provides a local copy of your emails, it's not a true backup by itself. If the IMAP server responds that your mailbox is empty (due to errors or account issues), OfflineIMAP will propagate this change and potentially wipe your local copy.
+
+### Protection Measures
+
+This container includes several protections:
+- `readonly = True` on remote repository - prevents any modifications to Gmail
+- `sync_deletes = no` on local repository - prevents deletions from being synced
+- Cache stored with mail data in `/data` for atomic consistency
+
+### Recommended: Filesystem Snapshots
+
+For true backup safety, use filesystem snapshots (BTRFS, ZFS, or LVM) on the `/data` volume:
+
+**BTRFS example:**
+```bash
+# Create snapshots before each sync
+btrfs subvolume snapshot /path/to/data /path/to/data-snapshot-$(date +%Y%m%d-%H%M)
+```
+
+**ZFS example:**
+```bash
+# Create snapshots with retention
+zfs snapshot tank/gmail-data@$(date +%Y%m%d-%H%M)
+```
+
+This provides versioned history, allowing recovery from any catastrophic sync errors.
+
 ## Security Considerations
 
 - The container stores credentials in configuration files - keep the volume secure
