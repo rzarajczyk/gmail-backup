@@ -169,8 +169,8 @@ readonly = True
 ssl = yes
 sslcacertfile = /etc/ssl/certs/ca-certificates.crt
 maxconnections = 3
-folderfilter = lambda folder: folder not in ['[Gmail]/All Mail', '[Gmail]/Important', '[Gmail]/Starred']
-nametrans = lambda folder: folder.replace('[Gmail]/', '').replace(' ', '_')
+#folderfilter = lambda folder: folder not in ['[Gmail]/All Mail', '[Gmail]/Wszystkie']
+nametrans = lambda folder: folder.replace('[Gmail]/', '')
 EOF
 done
 
@@ -258,25 +258,30 @@ namespace inbox {
   inbox = yes
   separator = /
 
-  mailbox Drafts {
-    auto = subscribe
-    special_use = \Drafts
-  }
-  mailbox Sent {
-    auto = subscribe
-    special_use = \Sent
-  }
-  mailbox Sent_Mail {
-    auto = subscribe
-    special_use = \Sent
-  }
-  mailbox Trash {
-    auto = subscribe
-    special_use = \Trash
-  }
   mailbox Spam {
     auto = subscribe
     special_use = \Junk
+  }
+  
+  mailbox "Wersje robocze" {
+    auto = subscribe
+    special_use = \Drafts
+  }
+  mailbox "Wysłane" {
+    auto = subscribe
+    special_use = \Sent
+  }
+  mailbox Kosz {
+    auto = subscribe
+    special_use = \Trash
+  }
+  mailbox "Ważne" {
+    auto = subscribe
+    special_use = \Flagged
+  }
+  mailbox "Wszystkie" {
+    auto = subscribe
+    special_use = \All
   }
 }
 
