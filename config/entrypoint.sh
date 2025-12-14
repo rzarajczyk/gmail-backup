@@ -345,6 +345,16 @@ smtp_php_mail = Off
 white_list = ""
 EOF
 
+# Create Rainloop application.ini if it doesn't exist
+mkdir -p /data/rainloop/data/_data_/_default_/configs
+if [ ! -f /data/rainloop/data/_data_/_default_/configs/application.ini ]; then
+    log "Creating Rainloop application.ini configuration..."
+    cat > /data/rainloop/data/_data_/_default_/configs/application.ini << EOF
+[capa]
+composer = Off
+EOF
+fi
+
 # Set proper ownership
 log "Setting file permissions..."
 chown -R vmail:vmail /data/mail
