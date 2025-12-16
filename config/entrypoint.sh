@@ -152,8 +152,6 @@ for i in "${!ACCOUNT_USERS[@]}"; do
 [Account ${user}]
 localrepository = Local_${account_num}
 remoterepository = Remote_${account_num}
-synclabels = yes
-labelsheader = X-Keywords
 
 [Repository Local_${account_num}]
 type = Maildir
@@ -233,7 +231,7 @@ mail_plugins = $mail_plugins fts fts_xapian
 
 plugin {
   fts = xapian
-  fts_xapian = partial=3 full=20 verbose=0
+  fts_xapian = partial=3 full=20 verbose=1
   fts_autoindex = yes
   fts_autoindex_max_recent_msgs = 100
   fts_enforced = yes
